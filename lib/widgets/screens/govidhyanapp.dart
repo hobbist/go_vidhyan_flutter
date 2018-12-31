@@ -83,7 +83,6 @@ class HomeScreenState extends State<HomeScreen>{
             children: drawerOptions,
           ),
         ),
-
       body: _getDrawerItemWidget(_selectedDrawerIndex),
     );
   }
