@@ -8,62 +8,41 @@ class SignupScreen extends StatefulWidget {
   }
 }
 
-class SignupState extends State<SignupScreen> {
+class SignupState extends State<SignupScreen> with TickerProviderStateMixin<SignupScreen> {
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    var array=['Well','Boring','Canel','Dam'];
-    String selectedWaterArrangement=array[0];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
-      body: Container(
-          padding: EdgeInsets.all(20.0),
-          child: Form(
-            key: this._formKey,
-            child: Column(
-              children: <Widget>[
-                TextFormField(
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(labelText: fullName),
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(labelText: address),
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: mobileNumber),
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: 'Jirayati'),
-                  initialValue: '0',
-                ),
-                TextFormField(
-                  keyboardType: TextInputType.number,
-                  initialValue: '0',
-                  decoration: InputDecoration(labelText: 'Bagayati'),
-                ),
-                DropdownButton<String>(
-                  value: selectedWaterArrangement,
-                  items: array.map((String f) {
-                    return DropdownMenuItem<String>(
-                      value: f,
-                      child: Text(f),
-                    );
-                  }).toList(),
-                  onChanged: (value){
-                    setState(() {
-                      selectedWaterArrangement=value;
-                    });
-                  },
-                )
-              ],
-            ),
-          )),
+    int _tabIndex = 0;
+    var tab=TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: 0
+    );
+    void _handleTabSelection(){
+      setState(() {
+        tab.index = _tabIndex;
+      });
+    }
+    tab.addListener(_handleTabSelection);
+    return Form(
+      child: DefaultTabController(length: 3,initialIndex: 0, child: Scaffold(
+        appBar: AppBar(
+          bottom: TabBar(tabs: [
+                  GestureDetector(child:Text('Personal Info'),onTap: ()=>_tabIndex=0,),
+                  GestureDetector(child:Text('Land'),onTap: ()=>_tabIndex=0),
+                  GestureDetector(child:Text('Family'),onTap: ()=>_tabIndex=0)],
+                  controller: tab,
+          ),
+          title: Text('Signup'),
+        ),
+        body: TabBarView(physics: NeverScrollableScrollPhysics(),children: [
+          TextFormField(keyboardType: TextInputType.number,decoration: InputDecoration(labelText: 'Mobile Number'),),
+          TextFormField(keyboardType: TextInputType.number,decoration: InputDecoration(labelText: 'Land Size'),),
+          TextFormField(keyboardType: TextInputType.number,decoration: InputDecoration(labelText: 'Family Members'),)
+        ]),
+      floatingActionButton: FloatingActionButton(backgroundColor: Colors.lightGreen,onPressed: null,tooltip: 'next',child: Icon(Icons.arrow_right),),
+      )),
     );
   }
 }
