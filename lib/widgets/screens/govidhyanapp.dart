@@ -5,6 +5,12 @@ import 'package:govidhyan_flutter/widgets/screens/loginscreen.dart';
 import 'package:govidhyan_flutter/widgets/screens/signupscreen.dart';
 import 'package:govidhyan_flutter/widgets/screens/stages.dart';
 import 'package:govidhyan_flutter/widgets/screens/signoutDialog.dart';
+import 'package:android_intent/android_intent.dart';
+import 'package:platform/platform.dart';
+import 'package:advanced_share/advanced_share.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
+
 class GoVidhyanApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -41,10 +47,14 @@ class HomeScreen extends StatefulWidget{
      this._singedUp=up;
    }
 
+  bool get signedUp{
+    return this._singedUp;
+  }
+
    final _drawerItems = [new DrawerItem(login, Icons.alternate_email,LoginScreen()),new DrawerItem(signup, Icons.accessibility,SignupScreen())];
    final _homeDrawerItems = [new DrawerItem(stages, Icons.assessment,StagesScreen()),new DrawerItem.empty(profile, Icons.account_box),
                               new DrawerItem.empty(whatsNew,Icons.flare),new DrawerItem.empty(contact_coordinator, Icons.perm_phone_msg),
-                              new DrawerItem.dialog(signout, Icons.layers,true)];
+                              ];
    
    List<DrawerItem> getHomedrawer()
   {
@@ -52,13 +62,14 @@ class HomeScreen extends StatefulWidget{
   }
   @override
   State<StatefulWidget> createState() {
-    return HomeScreenState();
+    return HomeScreenState(this.signedUp);
   }
 }
 
 class HomeScreenState extends State<HomeScreen>{
+  bool _signedUp=false;
+  HomeScreenState(this._signedUp);
   DrawerItem _selectedDrawerIndex = HomeScreen().getHomedrawer().elementAt(0) as DrawerItem;
-
   _onSelectItem(DrawerItem index) {
     print(index.title);
     setState(() => _selectedDrawerIndex = index);
@@ -112,12 +123,43 @@ class HomeScreenState extends State<HomeScreen>{
       );
       i=i+1;
     }
+    if(this._signedUp){
+      drawerOptions.add(new ListTile(
+        leading: new Icon(Icons.layers),
+        title: new Text(signout),
+        onTap: () => showAppDialog(context),
+      ));
+    }
     drawerOptions.add(new ListTile(
       leading: new Icon(Icons.language),
       title: new Text(aboutUs),
-      onTap: () => launchURL(goVidhnyanUrl),
+      onTap: (){
+        launchURL(goVidhnyanUrl);
+        //sendSms();
+      }
     ));
   return drawerOptions;
+  }
+
+  static const platform = const MethodChannel('sendSms');
+  Future<Null> sendSms()async {
+    print("SendSMS");
+    try {
+      final String result = await platform.invokeMethod('send',<String,dynamic>{"phone":"+919960564245","msg":"Hello! I'm sent programatically."}); //Replace a 'X' with 10 digit phone number
+      print(result);
+      } on PlatformException catch (e) {
+      print(e.toString());
+    }
+  }
+
+  Future<Null> whatsApp()async {
+    print("whatsApp");
+    try {
+      final String result = await platform.invokeMethod('whatsapp',<String,dynamic>{"phone":"+919960564245","msg":"Hello! I'm sent programatically."}); //Replace a 'X' with 10 digit phone number
+      print(result);
+    } on PlatformException catch (e) {
+      print(e.toString());
+    }
   }
 
 }

@@ -40,6 +40,7 @@ void showAppDialog(BuildContext context) {
             onPressed: () {
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context){
               HomeScreen screen=HomeScreen();
+              screen.signedUp=false;
               return screen;
             }));}
           ),
