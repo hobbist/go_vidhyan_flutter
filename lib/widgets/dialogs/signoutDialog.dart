@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:govidhyan_flutter/widgets/screens/govidhyanapp.dart';
+import 'package:govidhyan_flutter/widgets/screens/homescreen.dart';
 
 
 class SignoutScreen extends StatelessWidget{

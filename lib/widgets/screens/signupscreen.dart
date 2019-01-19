@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:govidhyan_flutter/widgets/screens/loginscreen.dart';
-import 'package:govidhyan_flutter/widgets/screens/govidhyanapp.dart';
+import 'package:govidhyan_flutter/widgets/screens/homescreen.dart';
 import 'package:govidhyan_flutter/widgets/constants/constants.dart';
 import 'package:govidhyan_flutter/model/userinformation.dart';
 

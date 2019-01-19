@@ -1,0 +1,13 @@
+ PackageManager packageManager = context.getPackageManager();
+    Intent i = new Intent(Intent.ACTION_VIEW);
+
+    try {
+        String url = "https://api.whatsapp.com/send?phone="+ phone +"&text=" + URLEncoder.encode(message, "UTF-8");
+        i.setPackage("com.whatsapp");
+        i.setData(Uri.parse(url));
+        if (i.resolveActivity(packageManager) != null) {
+            context.startActivity(i);
+        }
+    } catch (Exception e){
+        e.printStackTrace();
+    }

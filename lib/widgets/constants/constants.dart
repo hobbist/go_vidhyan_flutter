@@ -2,8 +2,11 @@ String title='Gau vidhyan';
 String menu='Menu';
 String imageLogoPath='images/govidhyan.png';
 String profile='Account Profile';
+String add_farmer_contact='Add Farmer for registration';
 String stages='Stages';
+String check_farmer_stages='Check Farmer Stages';
 String contact_coordinator='Contact Co-ordinator';
+String contact_Admin='Contact Admin';
 String aboutUs='AboutUs';
 String goVidhnyanUrl='http://www.govidnyan.org/index.html';
 String login='Login';
@@ -40,3 +43,6 @@ String farm_asset='Farming assets';
 
 String err="Error Text";
 String init_0='0';
+
+String farmer_name='Farmer Name';
+

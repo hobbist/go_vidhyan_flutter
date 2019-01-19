@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:govidhyan_flutter/widgets/constants/constants.dart';
-import 'package:govidhyan_flutter/widgets/screens/govidhyanapp.dart';
+import 'package:govidhyan_flutter/widgets/screens/homescreen.dart';
 class LoginScreen extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
