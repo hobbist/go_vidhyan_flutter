@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:govidhyan_flutter/widgets/screens/homescreen.dart';
+import 'package:govidhyan_flutter/model/city.dart';
+import 'package:govidhyan_flutter/model/coordinator.dart';
+import 'package:govidhyan_flutter/widgets/constants/messages.dart';
+import 'package:govidhyan_flutter/widgets/controller/signupController.dart';
+import 'package:govidhyan_flutter/widgets/dialogs/exceptionDialog.dart';
 import 'package:govidhyan_flutter/widgets/constants/constants.dart';
-import 'package:govidhyan_flutter/model/userinformation.dart';
+import 'package:govidhyan_flutter/exception/signupException.dart';
+import 'package:govidhyan_flutter/exception/networkexception.dart';
+import 'package:govidhyan_flutter/widgets/screens/homescreen.dart';
+import 'package:govidhyan_flutter/exception/citiNotFetchedException.dart';
+
 
 class SignupScreen extends StatelessWidget{
   @override
@@ -17,162 +25,118 @@ class SignupWidget extends StatefulWidget {
 }
 
 class SignupState extends State<SignupWidget> with TickerProviderStateMixin<SignupWidget> {
+  final SignupController controller =SignupController();
+  final TextEditingController nameController=TextEditingController();
+  final TextEditingController mobNumController=TextEditingController();
+  final TextEditingController addrController=TextEditingController();
+  final TextEditingController passController=TextEditingController();
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
-  int _currenStep = 0;
-  var info=UserInformation();
   String dropDownValue;
+  var cities=List<String>();
   @override
   Widget build(BuildContext context) {
 
-    return Form(
-      child: Stepper(
-            controlsBuilder: (BuildContext context, {VoidCallback onStepContinue, VoidCallback onStepCancel}) {
-              return Row(mainAxisAlignment: MainAxisAlignment.center,
+    return  ListView(children:[
+      Container(
+          padding: EdgeInsets.all(20.0),
+          child:Form(
+            key: _formKey,
+            child: Container(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  new RawMaterialButton(
-                    onPressed: onStepCancel,
-                    child: new Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 15.0,
-                    ),
-                    shape: new CircleBorder(),
-                    elevation: 2.0,
-                    fillColor: Colors.lightGreen,
-                    padding: const EdgeInsets.all(15.0),
-                  ),
-                  new RawMaterialButton(
-                    onPressed: onStepContinue,
-                    child: new Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 15.0,
-                    ),
-                    shape: new CircleBorder(),
-                    elevation: 2.0,
-                    fillColor: Colors.lightGreen,
-                    padding: const EdgeInsets.all(15.0),
-                  ),
+                  TextFormField(controller: mobNumController,decoration:
+                  InputDecoration(border:
+                  UnderlineInputBorder(),labelText: mobileNumber,labelStyle: TextStyle(color: Colors.lightGreen)),
+                      keyboardType: TextInputType.number,
+                      validator: (value){
+                        return controller.validateMobileNumber(value);
+                      }),
+                  TextFormField(controller: nameController,decoration:
+                  InputDecoration(border:
+                  UnderlineInputBorder(),labelText: fullName,labelStyle: TextStyle(color: Colors.lightGreen)),
+                      keyboardType: TextInputType.text,
+                      validator: (value){
+                        return controller.validateFarmerName(value);
+                      }),
+                  //Text("City"),
+                    DropdownButtonFormField<String>(
+                        validator: (value){
+                      if(value==null){
+                        return "Please select a city";
+                      }
+                    },hint: Text("Select City"),
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        filled: true,
+                      )
+                      ,value:dropDownValue,
+                      items: cities.map((String str){return DropdownMenuItem<String>(value: str,child: Text(str));}).toList()
+                      ,onChanged:(value){setState(() {
+                       dropDownValue=value;
+                  });}),
+                  TextFormField(controller: addrController,decoration:InputDecoration(labelText: address),maxLines: null,keyboardType: TextInputType.multiline,validator: (value){return controller.validateAddress(value);}),
+                  TextFormField(controller: passController,decoration:InputDecoration(labelText: password,),maxLines: null, obscureText: true,validator: (value){return controller.validatePassword(value);},),
+                  Padding(padding: EdgeInsets.all(10.0),
+                    child:RaisedButton(
+                      color: Colors.lightGreen,
+                      onPressed: () async{
+                        if(_formKey.currentState.validate()){
+                          Scaffold.of(context).showSnackBar(SnackBar(content: Text(processing),));
+                          //Send Registrationrequest of coordinator
+                          //prepare coordinator object
+                          try {
+                            Coordinator c=Coordinator(int.parse(mobNumController.text),passController.text);
+                            c.name=nameController.text;
+                            c.address=addrController.text;
+                            List<City> cities=new List();
+                            City selectedCity=new City();
+                            selectedCity.name=dropDownValue;
+                            cities.add(selectedCity);
+                            c.cities=cities;
+                            var r=await controller.senRegistrationRequest(c);
+                            if(r is Coordinator){
+                              if(r.status!=null&&r.status=="pending_approval"){
+                                Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                        builder: (BuildContext context) {
+                                          HomeScreen screen = HomeScreen.co(null, false);
+                                          screen.snackBarMessage="Signup Request completed.Please Login Again";
+                                          return screen;
+                                        }
+                                    )
+                                );
+                              }
+                            }
+                          }on SignupException catch (e){
+                            showexceptionDialog(context,"Signup Failure",e.msg);
+                          }on CitiNotFetchedException catch (e) {
+                            showexceptionDialog(context, "Mandatory Information", e.message);
+                          }on NetworkFailureException catch(e){
+                            showexceptionDialog(context,"Fatal Error",e.msg);
+                          }on Exception{
+                            showexceptionDialog(context, "Fatal Error","Unable to complete signup process");
+                          }
+                        }
+                      },
+                      child: Text(submit,style: TextStyle(color: Colors.white),),
+                    ) ,),
                 ],
-              );
-            },
-              steps: _getsignupSteps(),
-              currentStep: this._currenStep,
-              type: StepperType.horizontal,
-              onStepContinue: (){
-                setState(() {
-                  if(this._currenStep<this._getsignupSteps().length-1){
-                    this._currenStep=this._currenStep+1;
-                  }else{
-                      //signup activity is complete go to home screen
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context){
-                      HomeScreen screen=HomeScreen();
-                      screen.signedUp=true;
-                      return screen;
-                    }));
-                  }
-                });
-              },
-            onStepCancel: (){
-                setState(() {
-                  if(this._currenStep>0){
-                    this._currenStep=this._currenStep-1;
-                  }
-                });
-            },
+              ),
             ),
-    );
+          ))]);
   }
-  List<Step> _getsignupSteps(){
-  List<Step> steps=[
-    Step(
-       title: Text(personal),
-       content: Container(decoration: BoxDecoration(border: Border.all(width: 2.0,color: Colors.lightGreen)),
-         child: Column(
-         children: <Widget>[
-           TextFormField(
-             key: Key(name),
-             decoration: InputDecoration(labelText: fullName),
-           ),
-           TextFormField(
-             key: Key(mobileNumber),
-             decoration: InputDecoration(labelText: mobileNumber),
-           ),
-           TextFormField(
-             key: Key(address),
-             decoration: InputDecoration(labelText: address),
-           )
-         ],
-       )),
-       isActive: _currenStep>=0,
-    ),
-    Step(
-        title: Text(land),
-        content: Container(decoration: BoxDecoration(border: Border.all(width: 2.0,color: Colors.lightGreen)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                    Title(color: Colors.lightGreen, child: Text(land_size,style: TextStyle(color: Colors.green,fontWeight: FontWeight.bold),)),
-                    Divider(
-                      height: 30,
-                      color: Colors.lightGreen,
-                    ),
-                    TextFormField(
-                      key: Key(land_size),
-                      initialValue: init_0,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: land_size+' '+acres),
-                    ),
-                    TextFormField(
-                      key: Key(jirayati_size),
-                      keyboardType: TextInputType.number,
-                      initialValue: init_0,
-                      decoration: InputDecoration(labelText: jirayati),
-                    ),
-                    TextFormField(
-                      key: Key(bagayati_size),
-                      keyboardType: TextInputType.number,
-                      initialValue: init_0,
-                      decoration: InputDecoration(labelText: bagayati),
-                    ),
-                    Divider(
-                      height: 30,
-                      color: Colors.white,
-                    ),
-                    Title(color: Colors.lightGreen, child: Text(irr,style: TextStyle(color: Colors.green,fontWeight: FontWeight.bold),)),
-                    Divider(
-                      height: 30,
-                      color: Colors.lightGreen,
-                    ),
-                    Container(child:Row(
-                        children:[
-                          Expanded(child:Text(irr_type,style: TextStyle(fontWeight: FontWeight.bold),)),
-                          FittedBox(child:DropdownButton<String>(
-                            items: <String>[irr_type_well,irr_type_bore,irr_type_canal].map((f){
-                              return new DropdownMenuItem<String>(child: Text(f));
-                            }).toList()
-                            ,onChanged: (_){},
-                          ),
-                          )])
-                    ),
-                    TextFormField(
-                      key: Key(irr_land),
-                      initialValue: init_0,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: irr_land_str),
-                    ),
-                    ],
-                    ),
-                  ),
-        isActive: _currenStep>=1
-    ),
-    Step(
-        title: Text(farm_asset),
-        content: TextFormField(),
-        isActive: _currenStep>=2
-    )
-  ];
-  return steps;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchcities();
+  }
+  fetchcities() async{
+    var citi= await controller.fetchCities();
+    setState(() {
+      cities=citi;
+    });
   }
 }

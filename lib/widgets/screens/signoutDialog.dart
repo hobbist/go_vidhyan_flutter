@@ -22,7 +22,6 @@ class SignoutState extends State<SignoutWidget> with TickerProviderStateMixin<Si
     return Container(
     );
   }
-
 }
 
 void showAppDialog(BuildContext context) {
@@ -31,8 +30,8 @@ void showAppDialog(BuildContext context) {
     builder: (BuildContext context) {
       // return object of type Dialog
       return AlertDialog(
-        title: new Text("Signout Warning"),
-        content: new Text("You Sure want to signout?"),
+        title: Text("Signout Warning"),
+        content:Text("You Sure want to signout?"),
         actions: <Widget>[
           // usually buttons at the bottom of the dialog
           new FlatButton(
@@ -41,6 +40,7 @@ void showAppDialog(BuildContext context) {
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (BuildContext context){
               HomeScreen screen=HomeScreen();
               screen.signedUp=false;
+              screen.coordinator=null;
               return screen;
             }));}
           ),

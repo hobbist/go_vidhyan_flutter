@@ -1,32 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:govidhyan_flutter/model/coordinator.dart';
+import 'package:govidhyan_flutter/widgets/components/drawer.dart';
 import 'package:govidhyan_flutter/widgets/constants/constants.dart';
 import 'package:govidhyan_flutter/utils/functions.dart';
-import 'package:govidhyan_flutter/widgets/screens/loginscreen.dart';
-import 'package:govidhyan_flutter/widgets/screens/signupscreen.dart';
-import 'package:govidhyan_flutter/widgets/screens/stages.dart';
-import 'package:govidhyan_flutter/widgets/dialogs/signoutDialog.dart';
-import 'package:govidhyan_flutter/widgets/screens/farmerRegistration.dart';
-import 'dart:async';
-import 'package:flutter/services.dart';
-
-class DrawerItem {
-  String title;
-  IconData icon;
-  Widget page;
-  bool dialog=false;
-  DrawerItem(this.title, this.icon,this.page);
-  DrawerItem.empty(this.title, this.icon);
-  DrawerItem.dialog(this.title, this.icon,this.dialog);
-}
+import 'package:govidhyan_flutter/model/drawerItem.dart';
+import 'package:govidhyan_flutter/widgets/controller/homeScreenController.dart';
+import 'package:govidhyan_flutter/widgets/controller/userDataController.dart';
+import 'package:govidhyan_flutter/widgets/screens/signoutDialog.dart';
 
 class HomeScreen extends StatefulWidget{
-  static final HomeScreen _home=HomeScreen._internal();
+  Coordinator _coordinator;
+  bool _singedUp=false;
+  String _snackBarMessage=null;
   HomeScreen._internal();
+
+  static final HomeScreen _home=HomeScreen._internal();
+  static final DrawerHandler handler=DrawerHandler();
+  var drawer=null;
   factory HomeScreen(){
     return _home;
   }
 
-  bool _singedUp=false;
+  factory HomeScreen.co(Coordinator coordinator,bool signedUp){
+    _home._singedUp=signedUp;
+    _home._coordinator=coordinator;
+    UserData.user=coordinator;
+    return _home;
+  }
+
   void set signedUp(bool up){
     this._singedUp=up;
   }
@@ -35,25 +36,47 @@ class HomeScreen extends StatefulWidget{
     return this._singedUp;
   }
 
-  final _drawerItems = [new DrawerItem(login, Icons.alternate_email,LoginScreen()),new DrawerItem(signup, Icons.accessibility,SignupScreen())];
-  final _homeDrawerItems = [new DrawerItem(check_farmer_stages, Icons.assessment,StagesScreen()),new DrawerItem(add_farmer_contact, Icons.account_box,FarmerRegistrationScreen()),
-  new DrawerItem.empty(whatsNew,Icons.flare),new DrawerItem.empty(contact_Admin, Icons.perm_phone_msg),
-  ];
-
-  List<DrawerItem> getHomedrawer()
-  {
-    return _singedUp==true?_homeDrawerItems:_drawerItems;
-  }
   @override
   State<StatefulWidget> createState() {
     return HomeScreenState(this.signedUp);
+  }
+
+  Coordinator get coordinator => _coordinator;
+
+  set coordinator(Coordinator value) {
+    UserData.user=value;
+    _coordinator = value;
+  }
+
+  bool get singedUp => _singedUp;
+
+  set singedUp(bool value) {
+    _singedUp = value;
+  }
+
+  Future<List<DrawerItem>> getHomedrawer(){
+    //TODO - include Role based logic
+    drawer=handler.getDrawerItemsForUser(this.coordinator);
+    return drawer;
+  }
+
+  String get snackBarMessage => _snackBarMessage;
+
+  set snackBarMessage(String value) {
+    _snackBarMessage = value;
   }
 }
 
 class HomeScreenState extends State<HomeScreen>{
   bool _signedUp=false;
   HomeScreenState(this._signedUp);
-  DrawerItem _selectedDrawerIndex = HomeScreen().getHomedrawer().elementAt(0) as DrawerItem;
+  DrawerItem _selectedDrawerIndex;
+
+  @override
+  void initState() {
+    //coordinator=HomeScreenController.getCoordinatorFromLocalDB();
+  }
+
   _onSelectItem(DrawerItem index) {
     print(index.title);
     setState(() => _selectedDrawerIndex = index);
@@ -72,20 +95,38 @@ class HomeScreenState extends State<HomeScreen>{
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: buildDrawerOptions(),
-        ),
-      ),
-      body: _getDrawerItemWidget(context,_selectedDrawerIndex),
+    return FutureBuilder<List<DrawerItem>>(
+        future: HomeScreen().getHomedrawer(),
+        builder: (BuildContext context, AsyncSnapshot<List<DrawerItem>> snapshot) {
+          if(snapshot.hasError){
+            //TODO- widget showing error
+            return Scaffold(
+              appBar: AppBar(title: Text(title)),
+              body: Center(child: Text("App Error happened.Please Contact Admin."),),
+            );
+          }else{
+            if(snapshot.hasData){
+              return Scaffold(
+                appBar: AppBar(title: Text(title)),
+                drawer: Drawer(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: buildDrawerOptions(
+                        snapshot.data),
+                  ),
+                ),
+                body: _getDrawerItemWidget(context, _selectedDrawerIndex),
+              );
+            }else{
+              return new Scaffold(
+                body:  Center(child: CircularProgressIndicator(),),
+              );
+            }
+          }
+        }
     );
   }
-
-  List<Widget> buildDrawerOptions(){
-    var drawer=HomeScreen().getHomedrawer();
+  List<Widget> buildDrawerOptions(List<DrawerItem> drawer){
     var drawerOptions = <Widget>[];
     drawerOptions.add(DrawerHeader(
       decoration: BoxDecoration(
@@ -122,28 +163,9 @@ class HomeScreenState extends State<HomeScreen>{
           //sendSms();
         }
     ));
+    if(_selectedDrawerIndex==null){
+    _selectedDrawerIndex=drawer[0];
+    }
     return drawerOptions;
   }
-
-  static const platform = const MethodChannel('sendSms');
-  Future<Null> sendSms()async {
-    print("SendSMS");
-    try {
-      final String result = await platform.invokeMethod('send',<String,dynamic>{"phone":"+919960564245","msg":"Hello! I'm sent programatically."}); //Replace a 'X' with 10 digit phone number
-      print(result);
-    } on PlatformException catch (e) {
-      print(e.toString());
-    }
-  }
-
-  Future<Null> whatsApp()async {
-    print("whatsApp");
-    try {
-      final String result = await platform.invokeMethod('whatsapp',<String,dynamic>{"phone":"+919960564245","msg":"Hello! I'm sent programatically."}); //Replace a 'X' with 10 digit phone number
-      print(result);
-    } on PlatformException catch (e) {
-      print(e.toString());
-    }
-  }
-
 }
